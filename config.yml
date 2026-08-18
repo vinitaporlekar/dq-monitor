@@ -1,0 +1,4 @@
+warehouse: warehouse.db
+table: orders
+column: email
+z_threshold: 3.0
