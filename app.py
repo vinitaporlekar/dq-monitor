@@ -69,8 +69,9 @@ def get_metric_data():
 def dashboard(request: Request):
     metrics, last_run = get_metric_data()
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
-        {"request": request, "metrics": metrics, "last_run": last_run}
+        {"metrics": metrics, "last_run": last_run}
     )
 
 
