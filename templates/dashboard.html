@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dq-monitor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #1a1a1a;
+        }
+        h1 { margin-bottom: 5px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #fafafa; font-weight: 600; }
+        .status-ok { color: #16a34a; font-weight: 600; }
+        .status-alert { color: #dc2626; font-weight: 600; }
+        .status-pending { color: #6b7280; }
+        .chart-container { height: 250px; margin-top: 10px; }
+        .alert-row { background: #fef2f2; }
+    </style>
+</head>
+<body>
+    <h1>📊 dq-monitor Dashboard</h1>
+    <p class="subtitle">Data quality monitoring for warehouse tables • Last run: {{ last_run }}</p>
+
+    <div class="card">
+        <h2>Current Metrics</h2>
+        <table>
+            <tr>
+                <th>Metric</th>
+                <th>Current Value</th>
+                <th>Baseline (mean)</th>
+                <th>Status</th>
+            </tr>
+            {% for m in metrics %}
+            <tr class="{% if m.status == 'ALERT' %}alert-row{% endif %}">
+                <td>{{ m.name }}</td>
+                <td>{{ "%.4f"|format(m.value) }}</td>
+                <td>{% if m.mean %}{{ "%.4f"|format(m.mean) }}{% else %}—{% endif %}</td>
+                <td class="status-{{ m.status|lower }}">
+                    {% if m.status == 'OK' %}✓ Normal
+                    {% elif m.status == 'ALERT' %}🚨 Anomaly
+                    {% else %}… Building baseline
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% for m in metrics %}
+    <div class="card">
+        <h3>{{ m.name }} — History</h3>
+        <div class="chart-container">
+            <canvas id="chart-{{ loop.index }}"></canvas>
+        </div>
+    </div>
+    <script>
+        new Chart(document.getElementById('chart-{{ loop.index }}'), {
+            type: 'line',
+            data: {
+                labels: {{ m.history_labels | tojson }},
+                datasets: [{
+                    label: '{{ m.name }}',
+                    data: {{ m.history_values | tojson }},
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    </script>
+    {% endfor %}
+</body>
+</html>
